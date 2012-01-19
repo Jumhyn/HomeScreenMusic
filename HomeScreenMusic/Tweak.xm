@@ -5,6 +5,12 @@
 #import <MediaPlayer/MPMusicPlayerController.h>
 #import <Foundation/Foundation.h>
 
+#define SYSTEM_VERSION_EQUAL_TO(v)                  ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] == NSOrderedSame)
+#define SYSTEM_VERSION_GREATER_THAN(v)              ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] == NSOrderedDescending)
+#define SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(v)  ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] != NSOrderedAscending)
+#define SYSTEM_VERSION_LESS_THAN(v)                 ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] == NSOrderedAscending)
+#define SYSTEM_VERSION_LESS_THAN_OR_EQUAL_TO(v)     ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] != NSOrderedDescending)
+
 @interface SpringBoard : UIApplication 
 -(void)applicationOpenURL:(NSURL *)url;
 @end
@@ -49,6 +55,13 @@
 -(SBIcon*)mappedIconViewForIcon:(SBIcon*)icon;
 @end
 
+//@interface SBIconController
+//+(SBIconController*)sharedInstance;
+//-(CGRect)_contentViewRelativeFrameForIcon:(id)icon;
+//-(id)currentRootIconList;
+//-(BOOL)isEditing;
+//@end
+
 
 //NSDictionary *&_nowPlayingInfo = (MSHookIvar<NSDictionary *>(controller, "_nowPlayingInfo"));
 //image = [UIImage imageWithData:[_nowPlayingInfo valueForKey:@"artworkData"]];
@@ -76,11 +89,13 @@ NSTimer *timer;
     }
     if (held) {
 		held = NO;
-		return;
 	}
-    SBMediaController *controller = [%c(SBMediaController) sharedInstance];
-    [controller togglePlayPause];
+    else {
+        SBMediaController *controller = [%c(SBMediaController) sharedInstance];
+        [controller togglePlayPause];
+    }
 }
+
 
 %new(v@:@i)
 
@@ -147,11 +162,17 @@ NSTimer *timer;
 
 -(void)longPressTimerFired
 {
+    held = YES;
+    CGRect frame;
+    if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"5.0")) 
+        frame = [[%c(SBIconController) sharedInstance] _contentViewRelativeFrameForIcon:self];
+    else
+        frame = [self frame];
 	if (![[%c(SBIconController) sharedInstance] isEditing])  {
 		nextPrevOpen = !nextPrevOpen;
 		if (nextPrevOpen) {
 			UIButton *forward = [UIButton buttonWithType:UIButtonTypeCustom];
-			[forward setFrame:CGRectMake([self frame].origin.x+[self frame].size.width-51, [self frame].origin.y+5, 51, 51)];
+			[forward setFrame:CGRectMake(frame.origin.x+frame.size.width-51, frame.origin.y+5, 51, 51)];
 			[forward setBackgroundImage:[UIImage imageWithContentsOfFile:@"/Applications/SBControlsPlayPause.app/next@2x.png"] forState:UIControlStateNormal];
 			[forward addTarget:(SBControlPlayPause *)self action:@selector(changeSong:) forControlEvents:(UIControlEventTouchUpInside)];
             [forward addTarget:self action:@selector(changeSongPressedDown:) forControlEvents:UIControlEventTouchDown];
@@ -171,7 +192,7 @@ NSTimer *timer;
         	        	}]; 
 			
 			UIButton *back = [UIButton buttonWithType:UIButtonTypeCustom];
-			[back setFrame:CGRectMake([self frame].origin.x, [self frame].origin.y+5, 51, 51)];
+			[back setFrame:CGRectMake(frame.origin.x, frame.origin.y+5, 51, 51)];
 			[back setBackgroundImage:[UIImage imageWithContentsOfFile:@"/Applications/SBControlsPlayPause.app/previous@2x.png"] forState:UIControlStateNormal];
 			[back addTarget:(SBControlPlayPause *)self action:@selector(changeSong:) forControlEvents:(UIControlEventTouchUpInside)];
             [back addTarget:self action:@selector(changeSongPressedDown:) forControlEvents:UIControlEventTouchDown];
@@ -189,8 +210,8 @@ NSTimer *timer;
                 		completion:^(BOOL finished) {
 
                 		}];
-			CGRect frame = CGRectMake([self frame].origin.x+20, [self frame].origin.y+20, 10.0, 10.0);
-			UISlider *slider = [[UISlider alloc] initWithFrame:frame];
+			CGRect frame2 = CGRectMake(frame.origin.x+20, frame.origin.y+20, 10.0, 10.0);
+			UISlider *slider = [[UISlider alloc] initWithFrame:frame2];
 			[slider addTarget:self action:@selector(volumeChanged:) forControlEvents:UIControlEventValueChanged];
 			[slider setBackgroundColor:[UIColor clearColor]];
 			[slider setMinimumValue:0.0];
@@ -219,7 +240,7 @@ NSTimer *timer;
         	        	   		options:UIViewAnimationCurveEaseInOut
         	        			animations:^(void) {
                                         [v setAlpha:0.0];
-        	        	     			[v setFrame:CGRectMake([self frame].origin.x, [self frame].origin.y+5, 51, 51)];
+        	        	     			[v setFrame:CGRectMake(frame.origin.x, frame.origin.y+5, 51, 51)];
         	        			} 
         	        			completion:^(BOOL finished) {
         	        	     			[v removeFromSuperview];
@@ -231,7 +252,7 @@ NSTimer *timer;
         	        	   		options:UIViewAnimationCurveEaseInOut
         	        			animations:^(void) {
                                         [v setAlpha:0.0];
-        	        	     			[v setFrame:CGRectMake([self frame].origin.x+[self frame].size.width-51, [self frame].origin.y+5, 51, 51)];
+        	        	     			[v setFrame:CGRectMake(frame.origin.x+frame.size.width-51, frame.origin.y+5, 51, 51)];
         	        			} 
        		         			completion:^(BOOL finished) {
         	        	     			[v removeFromSuperview];
@@ -243,7 +264,7 @@ NSTimer *timer;
         	        	   		options:UIViewAnimationCurveEaseInOut
         	        			animations:^(void) {
                                         [v setAlpha:0.0];
-        	        	     			[v setFrame:CGRectMake([self frame].origin.x+20, [self frame].origin.y+20, 10.0, 10.0)];
+        	        	     			[v setFrame:CGRectMake(frame.origin.x+20, frame.origin.y+20, 10.0, 10.0)];
         	        			} 
        		         			completion:^(BOOL finished) {
         	        	     			[v removeFromSuperview];
@@ -260,7 +281,7 @@ NSTimer *timer;
         	           		options:UIViewAnimationCurveEaseInOut
         	        		animations:^(void) {
                                     [v setAlpha:0.0];
-        	             			[v setFrame:CGRectMake([self frame].origin.x, [self frame].origin.y+5, 51, 51)];
+        	             			[v setFrame:CGRectMake(frame.origin.x, frame.origin.y+5, 51, 51)];
         	        		} 
         	        		completion:^(BOOL finished) {
         	             			[v removeFromSuperview];
@@ -272,7 +293,7 @@ NSTimer *timer;
         	           		options:UIViewAnimationCurveEaseInOut
         	        		animations:^(void) {
                                     [v setAlpha:0.0];
-        	             			[v setFrame:CGRectMake([self frame].origin.x+[self frame].size.width-51, [self frame].origin.y+5, 51, 51)];
+        	             			[v setFrame:CGRectMake(frame.origin.x+frame.size.width-51, frame.origin.y+5, 51, 51)];
         	        		} 
        		         		completion:^(BOOL finished) {
         	        	    		[v removeFromSuperview];
@@ -284,7 +305,7 @@ NSTimer *timer;
                     options:UIViewAnimationCurveEaseInOut
                     animations:^(void) {
                         [v setAlpha:0.0];
-                        [v setFrame:CGRectMake([self frame].origin.x+20, [self frame].origin.y+20, 10.0, 10.0)];
+                        [v setFrame:CGRectMake(frame.origin.x+20, frame.origin.y+20, 10.0, 10.0)];
                     }
                     completion:^(BOOL finished) {
                         [v removeFromSuperview];
@@ -432,11 +453,15 @@ NSTimer *timer;
 
 -(void)longPressTimerFired {		
 	SBIcon *&icon = (MSHookIvar<SBIcon *>(self, "_icon"));
-
+    CGRect frame;
+    if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"5.0")) 
+        frame = [[%c(SBIconController) sharedInstance] _contentViewRelativeFrameForIcon:icon];
+    else
+        frame = [icon frame];
 
 	if (![[%c(SBIconController) sharedInstance] isEditing] && [(NSObject*)icon isKindOfClass:objc_getClass("SBControlPlayPause")]) {
 		UIButton *forward = [UIButton buttonWithType:UIButtonTypeCustom];
-		[forward setFrame:CGRectMake([icon frame].origin.x+[icon frame].size.width-30, [icon frame].origin.y+5, 30, [icon frame].size.height-10)];
+		[forward setFrame:CGRectMake(frame.origin.x+frame.size.width-30, frame.origin.y+5, 30, frame.size.height-10)];
 		[forward addTarget:(SBControlPlayPause *)icon action:@selector(forwardASong:) forControlEvents:(UIControlEventTouchDragEnter)];
 		[forward setOpaque:YES];
 		[forward setAlpha:1.0];
@@ -624,9 +649,19 @@ NSTimer *timer;
 
 %hook SBIcon
 
+%new(@@:)
+-(id)subview {
+    return [[%c(SBIconController) sharedInstance] contentView];
+}
+
 -(void)launch {
+ SBIcon *i = [[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"];
+    CGRect frame;
+    if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"5.0")) 
+        frame = [[%c(SBIconController) sharedInstance] _contentViewRelativeFrameForIcon:i];
+    else
+        frame = [i frame];
     if (nextPrevOpen) {
-        SBIcon *i = [[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"];
         for (UIView *v in [i superview].subviews) {
             if ([v tag] == 12346) {
                 [UIView transitionWithView:v
@@ -634,7 +669,7 @@ NSTimer *timer;
                         options:UIViewAnimationCurveEaseInOut
                         animations:^(void) {
                             [v setAlpha:0.0];
-                            [v setFrame:CGRectMake([i frame].origin.x, [i frame].origin.y+5, 51, 51)];
+                            [v setFrame:CGRectMake(frame.origin.x, frame.origin.y+5, 51, 51)];
                         } 
                         completion:^(BOOL finished) {
                             [v removeFromSuperview];
@@ -646,7 +681,7 @@ NSTimer *timer;
                         options:UIViewAnimationCurveEaseInOut
                         animations:^(void) {
                             [v setAlpha:0.0];
-                            [v setFrame:CGRectMake([i frame].origin.x+[i frame].size.width-51, [i frame].origin.y+5, 51, 51)];
+                            [v setFrame:CGRectMake(frame.origin.x+[i frame].size.width-51, frame.origin.y+5, 51, 51)];
                         } 
                         completion:^(BOOL finished) {
                             [v removeFromSuperview];
@@ -658,7 +693,7 @@ NSTimer *timer;
                         options:UIViewAnimationCurveEaseInOut
                         animations:^(void) {
                             [v setAlpha:0.0];
-                            [v setFrame:CGRectMake([i frame].origin.x+20, [i frame].origin.y+20, 10.0, 10.0)];
+                            [v setFrame:CGRectMake(frame.origin.x+20, frame.origin.y+20, 10.0, 10.0)];
                         }
                         completion:^(BOOL finished) {
                             [v removeFromSuperview];
@@ -677,6 +712,11 @@ NSTimer *timer;
 -(void)longPressTimerFired {
 	if (/*[[[[%c(SBIconController) sharedInstance] currentRootIconList] model] containsIcon:[[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"]] && */nextPrevOpen) {
 		SBIcon *i = [[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"];
+        CGRect frame;
+        if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"5.0")) 
+            frame = [[%c(SBIconController) sharedInstance] _contentViewRelativeFrameForIcon:i];
+        else
+            frame = [i frame];
 		for (UIView *v in [i superview].subviews) {
 			if ([v tag] == 12346) {
 				[UIView transitionWithView:v
@@ -684,7 +724,7 @@ NSTimer *timer;
 					options:UIViewAnimationCurveEaseInOut
 					animations:^(void) {
 						[v setAlpha:0.0];
-						[v setFrame:CGRectMake([i frame].origin.x, [i frame].origin.y+5, 51, 51)];
+						[v setFrame:CGRectMake(frame.origin.x, frame.origin.y+5, 51, 51)];
 					} 
 					completion:^(BOOL finished) {
 						[v removeFromSuperview];
@@ -696,7 +736,7 @@ NSTimer *timer;
 					options:UIViewAnimationCurveEaseInOut
 					animations:^(void) {
 						[v setAlpha:0.0];
-						[v setFrame:CGRectMake([i frame].origin.x+[i frame].size.width-51, [i frame].origin.y+5, 51, 51)];
+						[v setFrame:CGRectMake(frame.origin.x+frame.size.width-51, frame.origin.y+5, 51, 51)];
 					} 
 					completion:^(BOOL finished) {
 						[v removeFromSuperview];
@@ -708,7 +748,7 @@ NSTimer *timer;
 					options:UIViewAnimationCurveEaseInOut
 					animations:^(void) {
 						[v setAlpha:0.0];
-						[v setFrame:CGRectMake([i frame].origin.x+20, [i frame].origin.y+20, 10.0, 10.0)];
+						[v setFrame:CGRectMake(frame.origin.x+20, frame.origin.y+20, 10.0, 10.0)];
 					}
 					completion:^(BOOL finished) {
 						[v removeFromSuperview];
