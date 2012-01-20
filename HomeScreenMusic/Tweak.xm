@@ -86,7 +86,7 @@ NSTimer *updateTimer;
 
 - (void)launch {
     if (![[NSFileManager defaultManager] fileExistsAtPath:@"/var/mobile/Library/HomeScreenMusic/note.txt"]) {
-	UIAlertView *a = [[UIAlertView alloc] initWithTitle:@"Instructions" message:@"Instructions for use:\n1. To play and pause, tap the icon once.\n2. To show/hide the song control buttons, tap and hold the icon.\n3. To move the icon around, tap and hold any other app, then move this icon as you please.\n\n This app was brought to you 100% free. If you enjoy using this tweak please take a moment to follow the developers, @iPodUplink, on Twitter. \nThis message will not be shown again. All of this information can be found at http://jailbreaknation.com/HomeScreenMusic. If you want to review this tweak please link to that page.\n\nBig thanks to DHowett, rpetrich, TheZimm, conradev, and everyone else who helped me make this!" delegate:self cancelButtonTitle:@"Follow" otherButtonTitles: @"Dismiss", nil];
+	UIAlertView *a = [[UIAlertView alloc] initWithTitle:@"Instructions" message:@"Instructions for use:\n1. To play and pause, tap the icon once.\n2. To show/hide the song control buttons, tap and hold the icon.\n3. To move the icon around, tap and hold any other app, then move this icon as you please.\n\n This app was brought to you 100% free. If you enjoy using this tweak please take a moment to follow the developers, @iPodUplink, on Twitter. \nThis message will not be shown again. All of this information can be found at http://jailbreaknation.com/HomeScreenMusic. If you want to review this tweak please link to that page.\n\nBig thanks to DHowett, rpetrich, TheZimm, conradev, thekirbylover, and everyone else who helped me make this!" delegate:self cancelButtonTitle:@"Follow" otherButtonTitles: @"Dismiss", nil];
 	[a show];
 	return;
     }
@@ -458,6 +458,19 @@ NSTimer *updateTimer;
 
 %end
 
+//%hook SBFolder
+//
+//-(id)addIcon:(id)icon {
+//    if (icon == [[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"]) {
+//        return nil;
+//    }
+//    else {
+//        return %orig;
+//    }
+//}
+//
+//%end
+
 %hook SBIconView
 
 -(void)longPressTimerFired {
@@ -469,6 +482,7 @@ NSTimer *updateTimer;
         frame = [[%c(SBIconController) sharedInstance] _contentViewRelativeFrameForIcon:icon];
     else
         frame = [icon frame];
+        frame.origin.y -= 20;
 
 //    UIAlertView *a = [[UIAlertView alloc] initWithTitle:@"Test"message:[NSString stringWithFormat:@"x:%f\ny:%f\nwidth:%f\nheight:%f", frame.origin.x, frame.origin.y, frame.size.width, frame.size.height] delegate: self cancelButtonTitle:@"OK" otherButtonTitles:nil];
 //    [a show];
@@ -651,6 +665,16 @@ NSTimer *updateTimer;
 
 
 %hook SBIconController
+
+//-(void)dropIconIntoOpenFolder:(id)folder {
+//    if (icon == [[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"]) {
+//        return;
+//    }
+//    else {
+//        %orig;
+//    }
+//}
+
 
 -(void)scrollViewDidScroll:(id)scrollView {
 	%orig;
