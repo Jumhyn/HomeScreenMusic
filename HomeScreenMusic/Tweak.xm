@@ -19,6 +19,8 @@
 @interface SBIcon : UIView
 -(id)generateIconImage:(int)image;
 - (void)updateIcon;
+- (void)updateLabel:(id)sender;
+-(id)displayName;
 -(void)longPressTimerFired;
 @end
 
@@ -612,6 +614,7 @@ NSTimer *updateTimer;
     if ([[[[%c(SBIconController) sharedInstance] currentRootIconList] model] containsIcon:[[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"]]) {
         invertPlayPause = NO;
         [[[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"] updateIcon];
+        [NSTimer scheduledTimerWithTimeInterval:1.0 target:[[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"] selector:@selector(updateLabel:) userInfo:nil repeats:NO];
 
     }
     return b;
@@ -638,6 +641,7 @@ NSTimer *updateTimer;
     if ([[[[%c(SBIconController) sharedInstance] currentRootIconList] model] containsIcon:[[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"]]) {
         invertPlayPause = YES;
         [[[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"] updateIcon];
+        //[NSTimer scheduledTimerWithTimeInterval:1.0 target:[[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"] selector:@selector(updateLabel:) userInfo:nil repeats:NO];
 
     }
     return b;
@@ -862,12 +866,43 @@ NSTimer *updateTimer;
 	%orig;
 }
 
+%new(v@:)
+
+-(void)updateLabel:(id)sender {
+    SBIconLabel *label = nil;
+
+	SBIconImageView *imageView = nil;
+
+	if ([[[UIDevice currentDevice] systemVersion] floatValue] < 5.0f) {
+
+		SBIconLabel *&label2 = (MSHookIvar<SBIconLabel *>(self, "_label"));
+		label = label2;
+
+		SBIconImageView *&imageView2 = (MSHookIvar<SBIconImageView *>(self, "_iconImageView"));
+		imageView = imageView2;
+
+	} 
+	else {
+
+		SBIconLabel *&label2 = (MSHookIvar<SBIconLabel *>([[%c(SBIconViewMap) homescreenMap] mappedIconViewForIcon:(SBIcon*)self], "_label"));
+		label = label2;
+
+		SBIconImageView *&imageView2 = (MSHookIvar<SBIconImageView *>([[%c(SBIconViewMap) homescreenMap] mappedIconViewForIcon:(SBIcon*)self], "_iconImageView"));
+		imageView = imageView2;
+
+	}
+
+	[label setText:[self displayName]];
+
+	imageView.image = [self generateIconImage:0];
+}
+
 %end
 
 %hook SpringBoard
 
 -(void)applicationDidFinishLaunching:(id)application {
     %orig;
-    updateTimer = [NSTimer scheduledTimerWithTimeInterval:0.5 target:[[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"] selector:@selector(updateLabel:) userInfo:nil repeats:YES];
+    //updateTimer = [NSTimer scheduledTimerWithTimeInterval:0.5 target:[[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"] selector:@selector(updateLabel:) userInfo:nil repeats:YES];
 }
 %end

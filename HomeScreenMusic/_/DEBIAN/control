@@ -1,7 +1,7 @@
 Package: com.appuplink.sbcontrols
 Name: SBControls
 Depends: mobilesubstrate
-Version: 1.1.0-43
+Version: 1.1.0-51
 Architecture: iphoneos-arm
 Description: An awesome MobileSubstrate tweak!
 Maintainer: Freddy Kellison-Linn
