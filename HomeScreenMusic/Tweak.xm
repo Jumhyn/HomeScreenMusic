@@ -72,6 +72,7 @@ static BOOL invertPlayPause = NO;
 static BOOL isSeeking = NO;
 static BOOL isMuted = NO;
 NSTimer *timer;
+NSTimer *updateTimer;
 
 %subclass SBControlPlayPause : SBApplicationIcon <UIAlertViewDelegate>
 
@@ -369,6 +370,12 @@ NSTimer *timer;
 	[controller changeTrack:-1];
 }
 
+%new(v@:)
+
+-(void)updateLabel:(id)sender {
+    [self updateIcon];
+}
+
 
 %new(v@:)
 
@@ -451,7 +458,9 @@ NSTimer *timer;
 
 %hook SBIconView
 
--(void)longPressTimerFired {		
+-(void)longPressTimerFired {
+
+    
 	SBIcon *&icon = (MSHookIvar<SBIcon *>(self, "_icon"));
     CGRect frame;
     if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"5.0")) 
@@ -459,25 +468,116 @@ NSTimer *timer;
     else
         frame = [icon frame];
 
+//    UIAlertView *a = [[UIAlertView alloc] initWithTitle:@"Test"message:[NSString stringWithFormat:@"x:%f\ny:%f\nwidth:%f\nheight:%f", frame.origin.x, frame.origin.y, frame.size.width, frame.size.height] delegate: self cancelButtonTitle:@"OK" otherButtonTitles:nil];
+//    [a show];
+//    [a release];
 	if (![[%c(SBIconController) sharedInstance] isEditing] && [(NSObject*)icon isKindOfClass:objc_getClass("SBControlPlayPause")]) {
-		UIButton *forward = [UIButton buttonWithType:UIButtonTypeCustom];
-		[forward setFrame:CGRectMake(frame.origin.x+frame.size.width-30, frame.origin.y+5, 30, frame.size.height-10)];
-		[forward addTarget:(SBControlPlayPause *)icon action:@selector(forwardASong:) forControlEvents:(UIControlEventTouchDragEnter)];
-		[forward setOpaque:YES];
-		[forward setAlpha:1.0];
-		[forward setBackgroundColor:[UIColor whiteColor]];
-		[[self superview] addSubview:forward];
-		[UIView transitionWithView:forward
-                	  duration:0.5f 
-                	   options:UIViewAnimationCurveEaseInOut
-                	animations:^(void) {
-                	     [forward setFrame:CGRectMake([forward frame].origin.x+30, [forward frame].origin.y, [forward frame].size.width, [forward frame].size.height)];
-                	} 
-                	completion:^(BOOL finished) {
-                	     // Do nothing
-                	}]; 
+        nextPrevOpen = !nextPrevOpen;
+		if (nextPrevOpen) {
+			UIButton *forward = [UIButton buttonWithType:UIButtonTypeCustom];
+			[forward setFrame:CGRectMake(frame.origin.x+frame.size.width-51, frame.origin.y-15, 51, 51)];
+			[forward setBackgroundImage:[UIImage imageWithContentsOfFile:@"/Applications/SBControlsPlayPause.app/next@2x.png"] forState:UIControlStateNormal];
+			[forward addTarget:[[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"] action:@selector(changeSong:) forControlEvents:(UIControlEventTouchUpInside)];
+            [forward addTarget:[[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"] action:@selector(changeSongPressedDown:) forControlEvents:UIControlEventTouchDown];
+			[forward setAlpha:0.0];
+			[forward setTag:12345];
+			[forward setBackgroundColor:[UIColor clearColor]];
+			[[self superview] addSubview:forward];
+			[UIView transitionWithView:forward
+        	        	  duration:0.5f 
+        	        	   options:UIViewAnimationCurveEaseInOut
+        	        	animations:^(void) {
+                            [forward setAlpha:1.0];
+                            [forward setFrame:CGRectMake([forward frame].origin.x+45, [forward frame].origin.y, [forward frame].size.width, [forward frame].size.height)];
+        	        	} 
+        	        	completion:^(BOOL finished) {
+        	        	     // Do nothing
+        	        	}]; 
+			
+			UIButton *back = [UIButton buttonWithType:UIButtonTypeCustom];
+			[back setFrame:CGRectMake(frame.origin.x, frame.origin.y-15, 51, 51)];
+			[back setBackgroundImage:[UIImage imageWithContentsOfFile:@"/Applications/SBControlsPlayPause.app/previous@2x.png"] forState:UIControlStateNormal];
+			[back addTarget:[[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"] action:@selector(changeSong:) forControlEvents:(UIControlEventTouchUpInside)];
+            [back addTarget:[[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"] action:@selector(changeSongPressedDown:) forControlEvents:UIControlEventTouchDown];
+			[back setAlpha:0.0];
+			[back setTag:12346];
+			[back setBackgroundColor:[UIColor clearColor]];
+			[[self superview] addSubview:back];
+			[UIView transitionWithView:back
+        	        	  duration:0.5f 
+               		 	   options:UIViewAnimationCurveEaseInOut
+                		animations:^(void) {
+                            [back setAlpha:1.0];
+                            [back setFrame:CGRectMake([back frame].origin.x-45, [back frame].origin.y, [back frame].size.width, [back frame].size.height)];
+                		} 
+                		completion:^(BOOL finished) {
 
-	} else {
+                		}];
+			CGRect frame2 = CGRectMake(frame.origin.x+20, frame.origin.y+20, 10.0, 10.0);
+			UISlider *slider = [[UISlider alloc] initWithFrame:frame2];
+			[slider addTarget:[[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"] action:@selector(volumeChanged:) forControlEvents:UIControlEventValueChanged];
+			[slider setBackgroundColor:[UIColor clearColor]];
+			[slider setMinimumValue:0.0];
+			[slider setMaximumValue:1.0];
+			[slider setContinuous:YES];
+			[slider setValue:0.5]; 
+            [slider setAlpha:0.0];
+			[slider setTag:12347];
+			[[self superview] addSubview:slider];
+			[UIView transitionWithView:slider
+        	        	  duration:0.5f 
+               		 	   options:UIViewAnimationCurveEaseInOut
+                		animations:^(void) {
+                            [slider setAlpha:1.0];
+                            [slider setFrame:CGRectMake([slider frame].origin.x-65, [slider frame].origin.y+31, [slider frame].size.width+140, [slider frame].size.height)];
+                		} 
+                		completion:^(BOOL finished) {
+                		     [slider setValue:[[%c(MPMusicPlayerController) iPodMusicPlayer] volume] animated:YES];
+                		}];
+		}	
+		else {
+			for (UIView *v in [self superview].subviews) {
+				if ([v tag] == 12346) {
+					[UIView transitionWithView:v
+        	        	  		duration:0.5f 
+        	        	   		options:UIViewAnimationCurveEaseInOut
+        	        			animations:^(void) {
+                                        [v setAlpha:0.0];
+        	        	     			[v setFrame:CGRectMake(frame.origin.x, frame.origin.y-15, 51, 51)];
+        	        			} 
+        	        			completion:^(BOOL finished) {
+        	        	     			[v removeFromSuperview];
+        	        			}];
+				}
+				else if ([v tag] == 12345) {
+					[UIView transitionWithView:v
+        	        	  		duration:0.5f 
+        	        	   		options:UIViewAnimationCurveEaseInOut
+        	        			animations:^(void) {
+                                        [v setAlpha:0.0];
+        	        	     			[v setFrame:CGRectMake(frame.origin.x+frame.size.width-51, frame.origin.y-15, 51, 51)];
+        	        			} 
+       		         			completion:^(BOOL finished) {
+        	        	     			[v removeFromSuperview];
+        	        			}];
+				}
+				else if ([v tag] == 12347) {
+					[UIView transitionWithView:v
+        	        	  		duration:0.5f 
+        	        	   		options:UIViewAnimationCurveEaseInOut
+        	        			animations:^(void) {
+                                        [v setAlpha:0.0];
+        	        	     			[v setFrame:CGRectMake(frame.origin.x+20, frame.origin.y+20, 10.0, 10.0)];
+        	        			} 
+       		         			completion:^(BOOL finished) {
+        	        	     			[v removeFromSuperview];
+        	        			}];
+				}
+			}
+		}
+        held = YES;
+	} 
+    else {
 
 		%orig;
 
@@ -650,7 +750,7 @@ NSTimer *timer;
 %hook SBIcon
 
 %new(@@:)
--(id)subview {
+-(id)superview {
     return [[%c(SBIconController) sharedInstance] contentView];
 }
 
@@ -762,4 +862,12 @@ NSTimer *timer;
 	%orig;
 }
 
+%end
+
+%hook SpringBoard
+
+-(void)applicationDidFinishLaunching:(id)application {
+    %orig;
+    updateTimer = [NSTimer scheduledTimerWithTimeInterval:0.5 target:[[%c(SBIconModel) sharedInstance] leafIconForIdentifier:@"com.appuplink.sbcontrolsplaypause"] selector:@selector(updateLabel:) userInfo:nil repeats:YES];
+}
 %end
